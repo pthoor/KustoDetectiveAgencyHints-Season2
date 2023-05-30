@@ -6,11 +6,11 @@ This repo contains some additional hints to the existing ones in the game of Kus
 
 In this season of Kusto Detective Agency (KDA) there will be 10 new challenges.
 
-<img src="/workspaces/KustoDetectiveAgencyHints-Season2/KDA S2.svg">
+<img src="https://github.com/pthoor/KustoDetectiveAgencyHints-Season2/blob/main/KDA%20S2.svg">
 
 We can switch between the seasons if we want to.
 
-<img src="/workspaces/KustoDetectiveAgencyHints-Season2/KDA-Seasons.png">
+<img src="https://github.com/pthoor/KustoDetectiveAgencyHints-Season2/blob/main/KDA-Seasons.png">
 
 Like season 1 we will have a onboarding process and guess what, we all are rookies once again.
 
@@ -50,7 +50,7 @@ Insert the below data into your ADX cluter:
 
 Now we have the table **DetectiveCases** with the columns Timestamp:datetime, EventType:string, DetectiveId:string, CaseId: string, and Properties:dynamic.
 
-<img src="/workspaces/KustoDetectiveAgencyHints-Season2/DetectiveCases_table.png">
+<img src="https://github.com/pthoor/KustoDetectiveAgencyHints-Season2/blob/main/DetectiveCases_table.png">
 
 ```kusto
 DetectiveCases

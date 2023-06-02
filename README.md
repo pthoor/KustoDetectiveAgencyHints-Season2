@@ -9,16 +9,16 @@ In this season of Kusto Detective Agency (KDA) there will be 10 new challenges.
 ![](KDA-S2.svg)
 
 * [Onboarding Case](#Onboarding)
-* [Coming Soon - Case 1](#Case1)
-* [Coming Soon - Case 2](#Case2)
-* [Coming Soon - Case 3](#Case3)
-* [Coming Soon - Case 4](#Case4)
-* [Coming Soon - Case 5](#Case5)
-* [Coming Soon - Case 6](#Case6)
-* [Coming Soon - Case 7](#Case7)
-* [Coming Soon - Case 8](#Case8)
-* [Coming Soon - Case 9](#Case9)
-* [Coming Soon - Case 10](#Case10)
+* [Case 1 (Coming Soon)](#Case-1)
+* [Case 2 (Coming Soon)](#Case-2)
+* [Case 3 (Coming Soon)](#Case-3)
+* [Case 4 (Coming Soon)](#Case-4)
+* [Case 5 (Coming Soon)](#Case-5)
+* [Case 6 (Coming Soon)](#Case-6)
+* [Case 7 (Coming Soon)](#Case-7)
+* [Case 8 (Coming Soon)](#Case-8)
+* [Case 9 (Coming Soon)](#Case-9)
+* [Case 10 (Coming Soon)](#Case-10)
 
 ## Information
 
@@ -46,7 +46,9 @@ So now we need to find the detective who earned the most money.
 
 ## Onboarding
 
-**Who is the detective that earned most money in 2022?**
+**Welcome to season 2!**
+
+Answer the question: Who is the detective that earned most money in 2022?
 
 Start by logging in to your free ADX cluster, if you need to start over and create a new cluster - follow the guide here https://aka.ms/kustofree. Make sure to copy the Cluster URI (ending with kusto.windows.net) and save that somewhere or access https://dataexplorer.azure.com/freecluster to see it.
 
@@ -140,3 +142,33 @@ DetectiveCases
 
 
 ## Case 1
+
+**To bill or not to bill?**
+
+Answer the question - What is the total bills amount due in April?
+
+The Kusto Detective Agency welcomes you to investigate a mystery in Digitown where water and electricity bills have doubled without explanation. Equipped with telemetry data and an SQL query, you must use your skills to uncover hidden errors and solve the perplexing situation before the upcoming mayoral election.
+
+Ingest the below data into your free cluster:
+
+```kusto
+.execute database script <|
+// The script takes ~20seconds to complete ingesting all the data.
+.set-or-replace Costs <| 
+    datatable(MeterType:string, Unit:string, Cost:double) [
+     'Water', 'Liter', 0.001562, 
+     'Electricity', 'kwH', 0.3016]
+.create-merge table Consumption (Timestamp:datetime , HouseholdId:string, MeterType:string, Consumed:double)
+.ingest async into table Consumption (@'https://kustodetectiveagency.blob.core.windows.net/kda2c1taxbills/log_00000.csv.gz')
+.ingest async into table Consumption (@'https://kustodetectiveagency.blob.core.windows.net/kda2c1taxbills/log_00001.csv.gz')
+.ingest into table Consumption (@'https://kustodetectiveagency.blob.core.windows.net/kda2c1taxbills/log_00002.csv.gz')
+```
+
+Here's the SQL query used for the calculation.
+
+```sql
+SELECT SUM(Consumed * Cost) AS TotalCost
+FROM Costs
+JOIN Consumption ON Costs.MeterType = Consumption.MeterType
+```
+

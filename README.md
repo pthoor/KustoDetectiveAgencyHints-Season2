@@ -1,6 +1,6 @@
 # Kusto Detective Agency Hints - Season 2
 
-This repo contains some additional hints to the existing ones in the game of Kusto Detective Agency 🕵️ 🔐
+This repo contains some additional hints to the existing ones in the game of Kusto Detective Agency 🕵️ 🔐 (Under construction!)
 
 <img src="https://detective.kusto.io/img/KDA-horizontal.svg">
 
@@ -145,6 +145,8 @@ DetectiveCases
 
 **To bill or not to bill?**
 
+<img src="https://detective.kusto.io/_next/image?url=https%3A%2F%2Fkda-webassets.azureedge.net%2Fimages%2Fs2_case_001_5262aa40.png&w=750&q=75" width=35% height=35%>
+
 Answer the question - What is the total bills amount due in April?
 
 The Kusto Detective Agency welcomes you to investigate a mystery in Digitown where water and electricity bills have doubled without explanation. Equipped with telemetry data and an SQL query, you must use your skills to uncover hidden errors and solve the perplexing situation before the upcoming mayoral election.
@@ -172,3 +174,39 @@ FROM Costs
 JOIN Consumption ON Costs.MeterType = Consumption.MeterType
 ```
 
+
+## Case 2
+
+**Catch the Phishermen**
+
+<img src="https://detective.kusto.io/_next/image?url=https%3A%2F%2Fkda-webassets.azureedge.net%2Fimages%2Fs2_case_002_8b69d8fb.png&w=750&q=75" width=35% height=35%>
+
+```kusto
+.execute database script <|
+.create-merge table PhoneCalls (Timestamp:datetime, EventType:string, CallConnectionId:string, Properties:dynamic)
+.ingest async into table PhoneCalls (@'https://kustodetectiveagency.blob.core.windows.net/kda2c2phonecalls/log_00000.csv.gz')
+.ingest async into table PhoneCalls (@'https://kustodetectiveagency.blob.core.windows.net/kda2c2phonecalls/log_00001.csv.gz')
+// Last command is running sync, so when it finishes the data is already ingested.
+// It can take about 1min to run.
+.ingest into table PhoneCalls (@'https://kustodetectiveagency.blob.core.windows.net/kda2c2phonecalls/log_00002.csv.gz')
+```
+
+```kusto
+PhoneCalls
+| take 10
+```
+
+```kusto
+PhoneCalls
+| summarize count() by bin(Timestamp,1h)
+```
+
+```kusto
+PhoneCalls
+| take 10
+| extend Origin = tostring(Properties.Origin)
+| extend Destination = tostring(Properties.Destination)
+| extend IsHidden = tobool(Properties.IsHidden)
+| extend DisconnectedBy = tostring(Properties.DisconnectedBy)
+| project-reorder Timestamp,CallConnectionId,EventType,Origin,Destination,IsHidden,DisconnectedBy
+```

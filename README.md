@@ -9,8 +9,8 @@ In this season of Kusto Detective Agency (KDA) there will be 10 new challenges.
 ![](KDA-S2.svg)
 
 * [Onboarding Case](#Onboarding)
-* [Case 1 (Coming Soon)](#Case-1)
-* [Case 2 (Coming Soon)](#Case-2)
+* [Case 1](#Case-1)
+* [Case 2](#Case-2)
 * [Case 3 (Coming Soon)](#Case-3)
 * [Case 4 (Coming Soon)](#Case-4)
 * [Case 5 (Coming Soon)](#Case-5)
@@ -147,6 +147,20 @@ DetectiveCases
 
 <img src="https://detective.kusto.io/_next/image?url=https%3A%2F%2Fkda-webassets.azureedge.net%2Fimages%2Fs2_case_001_5262aa40.png&w=750&q=75" width=35% height=35%>
 
+> Dear Detective,
+
+> Welcome to the Kusto Detective Agency! We're thrilled to have you on board for an exciting new challenge that awaits us. Get ready to put your detective skills to the test as we dive into a perplexing mystery that has struck Digitown.
+
+> Imagine this: It's a fresh new year, and citizens of Digitown are in an uproar. Their water and electricity bills have inexplicably doubled, despite no changes in their consumption. To make matters worse, the upcoming mayoral election amplifies the urgency to resolve this issue promptly.
+
+> But fear not, for our esteemed detective agency is on the case, and your expertise is vital to crack this mystery wide open. We need your keen eye and meticulous approach to inspect the telemetry data responsible for billing, unravel any hidden errors, and set things right.
+
+> Last year, we successfully served Mayor Gaia Budskott, leaving a lasting impression. Impressed by our work, the city has once again turned to us for assistance, and we cannot afford to disappoint our client.
+
+> The city's billing system utilizes SQL (an interesting choice, to say the least), but fret not, for we have the exported April billing data at your disposal. Additionally, we've secured the SQL query used to calculate the overall tax. Your mission is to work your magic with this data and query, bringing us closer to the truth behind this puzzling situation.
+
+> Detective, we have complete faith in your abilities, and we are confident that you will rise to the occasion. Your commitment and sharp instincts will be instrumental in solving this enigma.
+
 Answer the question - What is the total bills amount due in April?
 
 The Kusto Detective Agency welcomes you to investigate a mystery in Digitown where water and electricity bills have doubled without explanation. Equipped with telemetry data and an SQL query, you must use your skills to uncover hidden errors and solve the perplexing situation before the upcoming mayoral election.
@@ -173,6 +187,79 @@ SELECT SUM(Consumed * Cost) AS TotalCost
 FROM Costs
 JOIN Consumption ON Costs.MeterType = Consumption.MeterType
 ```
+
+Let's see what we have in the Consumption table.
+
+```kusto
+Consumption
+| take 10
+```
+
+![](Consumption_Take10.png)
+
+We have the columns Timestamp:datetime , HouseholdId:string, MeterType:string, and Consumed:double.
+
+Let's see if we can find some more information about the data.
+
+```kusto
+Consumption
+| summarize count() by MeterType
+```
+
+![](Consumption_MeterType.png)
+
+So we have two different MeterTypes, Water and Electricity. Let's see what we have in the 'Costs' table.
+
+```kusto
+Costs
+```
+
+![](Costs.png)
+
+Ok, so we have the columns MeterType:string, Unit:string, and Cost:double.
+
+The riddle stated that the costs have doubled, so let's see if we can find some more information about that.
+
+```kusto
+Consumption
+| summarize Count=count() by Timestamp, HouseholdId, MeterType, Consumed
+| where Count > 1
+| sort by HouseholdId
+```
+
+![](Consumption_DuplicateReadings.png)
+
+So we have some duplicate readings, let's see some data in a linechart per day.
+
+```kusto
+Consumption
+| summarize sum(Consumed) by bin(Timestamp, 1d)
+| render linechart 
+```
+
+![](Consumption_SumLine.png)
+
+Grabbing one of the HouseholdId and take a look at the duplicate readings.
+
+```kusto
+Consumption
+| where HouseholdId == "DTI0002D0C64A9746E3"
+| sort by Timestamp asc
+```
+
+![](Consumption_CheckHouseId.png)
+
+So we do have some duplicate readings, but we also have some readings that are not duplicate. We need to find a way to only calculate one reading per day and per MeterType. Let's try with some basic query.
+
+```kusto
+Consumption 
+| summarize Readings = count() by HouseholdId, MeterType
+| where Readings > 30
+| sort by HouseholdId
+```
+
+![](Consumption_Readings.png)
+
 
 
 ## Case 2

@@ -260,6 +260,112 @@ Consumption
 
 ![](Consumption_Readings.png)
 
+Ok, so we have some HouseholdId that have more than 30 readings per 'MeterType', we only want one reading per day per 'MeterType'.
+
+I think we need to check the Consumed column and see if we have some negative values.
+
+```kusto
+Consumption
+| where Consumed < 0
+```
+
+Yes, we have 144 records with that! So we need to have that in mind for our final solution.
+
+![](Consumption_NegativeReadings.png)
+
+We have some options to remove duplicate readings, we can use the arg_max() function or distinct operator. Here we will only look at the Electricity MeterType.
+
+**arg_max()**
+
+```kusto
+Consumption
+| where Consumed > 0
+| where MeterType == 'Electricity'
+| summarize arg_max(Timestamp,*) by Consumed
+| summarize sum(Consumed)
+```
+
+**distinct**
+
+```kusto
+Consumption
+| where MeterType == 'Electricity'
+| where Consumed > 0
+| distinct *
+| summarize sum(Consumed)
+```
+
+Same result, but I will use the arg_max() function in my solution. You remember that we had another table called 'Costs' with the cost for each MeterType? Let's join that table with the Consumption table with 'lookup' operator.
+
+```kusto
+Consumption
+| where Consumed > 0
+| summarize arg_max(Timestamp,*) by Consumed
+| summarize sum(Consumed) by MeterType
+| lookup Costs on MeterType
+```
+
+![](Consumption_lookupCosts.png)
+
+Now let's add the calculation for the total cost. Remember the names of the columns in the Costs table? We can use the same name for the columns in the Consumption table when we have the lookup operator. (We will make the name of the summarize more precise in the final solution, for now it will get the name of 'sum_Consumed'.)
+
+```kusto
+Consumption
+| where Consumed > 0
+| summarize arg_max(Timestamp,*) by Consumed
+| summarize sum(Consumed) by MeterType
+| lookup Costs on MeterType
+| extend TotalCostPerMeterType = sum_Consumed * Cost
+```
+
+![](Consumption_TotalCostPerMeterType.png)
+
+Grab your calculator and calculate the sum of the TotalCostPerMeterType column... just kidding, we can use the summarize sum() function to get the final result.
+
+```kusto
+Consumption
+| where Consumed > 0
+| summarize arg_max(Timestamp,*) by Consumed
+| summarize sum(Consumed) by MeterType
+| lookup Costs on MeterType
+| extend TotalCostPerMeterType = sum_Consumed * Cost
+| summarize sum(TotalCostPerMeterType)
+```
+
+To make it more readable we can rename our columns, see below:
+
+```kusto
+Consumption
+| where Consumed > 0
+| summarize arg_max(Timestamp,*) by Consumed
+| summarize SumOfConsumed = sum(Consumed) by MeterType
+| lookup Costs on MeterType
+| extend TotalCostPerMeterType = SumOfConsumed * Cost
+| summarize TotalBillforApril = sum(TotalCostPerMeterType)
+```
+
+Ok for a final solution but we can do better. The query above will take some time to run (11 seconds), let's see if we can optimize it.
+
+```kusto
+Consumption
+| where Consumed > 0
+| distinct *
+| summarize SumOfConsumed = sum(Consumed) by MeterType
+| lookup Costs on MeterType
+| extend TotalCostPerMeterType = SumOfConsumed * Cost
+| summarize TotalBillforApril = sum(TotalCostPerMeterType)
+```
+
+We are down to 4.5 seconds and we have the same result. This can be better with the shuffle query operator if we want to. Let's try that.
+
+```kusto
+Consumption
+| summarize hint.strategy=shuffle arg_max(Consumed, *) by HouseholdId, MeterType, Timestamp
+| lookup Costs on MeterType
+| summarize sum(Consumed * Cost)
+```
+
+Down to 2 seconds now. Great! Get more familiar with the shuffle query operator here: [shuffle query](https://learn.microsoft.com/azure/data-explorer/kusto/query/shufflequery?WT.mc_id=AZ-MVP-5004683).
 
 
 ## Case 2
@@ -393,7 +499,7 @@ So we have a lot of calls that are between 0 and 10 minutes long. Let's see if w
 Added CountOfCalls with dcount(Destination) to see if we can identity who have been making the most calls (and of course we need to sort the output and grab top 10).
 
 ```kusto
-PPhoneCalls
+PhoneCalls
 | extend Origin = tostring(Properties.Origin)
 | extend Destination = tostring(Properties.Destination)
 | extend IsHidden = tobool(Properties.IsHidden)
@@ -418,3 +524,7 @@ PPhoneCalls
 ```
 
 Have we found our phishermen? 🎣
+
+## Case 3
+
+Coming soon...

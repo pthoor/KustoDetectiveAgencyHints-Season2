@@ -8,7 +8,7 @@ In this season of Kusto Detective Agency (KDA) there will be 10 new challenges.
 
 ![](img/KDA-S2.svg)
 
-* [Onboarding Case](/workspaces/KustoDetectiveAgencyHints-Season2/_Onboarding.md)
+* [Onboarding Case](_Onboarding.md)
 * [Case 1](Case_1.md)
 * [Case 2](Case_2.md)
 * [Case 3](Case_3.md)

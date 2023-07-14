@@ -50,5 +50,29 @@ The other table CarsTraffic contains Timestamp, VIN, Ave, and Street. Do you rem
 
 ```kusto
 CarsTraffic
-| take 100
+| take 10
 ```
+
+So we have some stolen cars, their VIN plate are replaced and we do hope that the cars are gathered in the same location. 
+
+I think we could try out the function arg_max to find some more clues. 
+
+```kusto
+CarsTraffic
+| where VIN in (StolenCars)
+| summarize arg_max(Timestamp,*) by VIN
+```
+
+Okey, so we have two different Ave and Street where our stolen cars are last seen. 
+
+* Ave: 223, Street: 86
+* Ave: 122, Street: 251
+
+```kusto
+CarsTraffic
+| summarize arg_max(Timestamp,Ave,Street) by VIN
+| summarize count() by Ave,Street
+| sort by count_
+```
+
+The same Ave and Street appears in our result, more than 4900 counts. 

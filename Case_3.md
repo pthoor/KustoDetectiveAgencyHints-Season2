@@ -19,6 +19,8 @@
 > Best regards,
 > Captain Samuel Impson.
 
+[](/img/KDA/Road.png)
+
 Let's jump into the data and find the cars.
 
 Copy and insert the below code to ingest the data into your cluster. 
@@ -76,3 +78,32 @@ CarsTraffic
 ```
 
 The same Ave and Street appears in our result, more than 4900 counts. 
+
+Let's try some join between our StolenCars and CarsTraffic to see if we can find something useful. 
+
+```kusto
+StolenCars
+| join kind=inner CarsTraffic on VIN
+| summarize arg_max(Timestamp, Ave, Street) by VIN
+| summarize count() by Ave, Street
+| sort by count_
+```
+
+Ah, we have the same Ave and Street with a total of 20 cars. I think we can be sure that we have the location of the swapping of plates. 
+
+I have no clue how many minutes it take to switch the plates but around somewhere between 5-10 minutes sounds to be right for me. 
+
+```kusto
+let StolenVINs=(   
+    StolenCars
+    | join kind=inner CarsTraffic on VIN
+    | summarize arg_max(Timestamp, Ave, Street) by VIN
+    | project-rename StolenVINPlate=VIN
+);
+CarsTraffic
+| summarize StartTime=arg_min(Timestamp, Ave,Street), EndTime=arg_max(Timestamp, Ave, Street) by VIN
+| project-rename StartAve=Ave, StartStreet=Street,EndAve=Ave1, EndStreet=Street1
+| join kind=inner StolenVINs on $left.StartAve == $right.Ave and $left.StartStreet == $right.Street 
+| where StartTime between (Timestamp .. 8m)
+| summarize Count=count() by EndAve, EndStreet
+```

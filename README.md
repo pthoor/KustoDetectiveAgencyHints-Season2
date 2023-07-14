@@ -13,12 +13,12 @@ In this season of Kusto Detective Agency (KDA) there will be 10 new challenges.
 * [Case 2](Case_2.md)
 * [Case 3](Case_3.md)
 * [Case 4](Case_4.md)
-* [Case 5 (Coming Soon)](#Case-5)
-* [Case 6 (Coming Soon)](#Case-6)
-* [Case 7 (Coming Soon)](#Case-7)
-* [Case 8 (Coming Soon)](#Case-8)
-* [Case 9 (Coming Soon)](#Case-9)
-* [Case 10 (Coming Soon)](#Case-10)
+* [Case 5](Case_5.md)
+* [Case 6 (Coming Soon]()
+* [Case 7 (Coming Soon)]()
+* [Case 8 (Coming Soon)]()
+* [Case 9 (Coming Soon)]()
+* [Case 10 (Coming Soon)]()
 
 ## Information
 

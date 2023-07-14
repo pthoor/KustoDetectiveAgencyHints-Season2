@@ -1,1 +1,54 @@
 ## Case 3
+
+**Return the stolen cars!**
+
+<img src="https://detective.kusto.io/_next/image?url=https://kda-webassets.azureedge.net/images/s2_case_003_48c588e3.png&w=750&q=75" width=35% height=35%>
+
+> Hey there Detective,
+
+> We've got an urgent case that needs your expertise! There has been a sudden increase in unsolved cases of stolen cars all across our city, and the police need our help again to crack the case.
+
+> We've been given access to a massive dataset of car traffic for over a week, as well as a set of cars that have been stolen. It's possible that the car's identification plates were replaced during the robbery, which makes this case even more challenging.
+
+> We need you to put on your detective hat and analyze the data to find any patterns or clues that could lead us to the location of these stolen cars. It is very likely that all the stolen cars are being stored in the same location.
+
+> Time is of the essence, and we need to find these cars before they are sold or taken out of the city. The police are counting on us to solve this case, and we can't let them down!
+
+> Are you up for the challenge, detective? We know you are! Let's get to work and crack this case wide open!
+
+> Best regards,
+> Captain Samuel Impson.
+
+Let's jump into the data and find the cars.
+
+Copy and insert the below code to ingest the data into your cluster. 
+
+```kusto
+.execute database script <|
+// It takes about 1min to script to complete loading the data
+.set-or-replace StolenCars <|
+datatable(VIN:string)
+   ['LG232761G','SA732295L','MW406687Q','PR843817F','EL438126P',
+    'GA871473A','IR177866Y','LP489241B','AS483204L','DO255727O',
+    'BV850698T','YZ347238C','NJ586451R','VB724416I','SI241398E',
+    'IN149152E','PV340883B','CK552050Z','ZJ786806D','KU388194T']
+.create-merge table CarsTraffic(Timestamp:datetime, VIN:string, Ave:int, Street:int)
+//clear any previously ingested data if such exists
+.clear table CarsTraffic data
+.ingest async into table CarsTraffic(@'https://kustodetectiveagency.blob.core.windows.net/kda2c3cartraffic/log_00000.csv.gz')
+.ingest async into table CarsTraffic(@'https://kustodetectiveagency.blob.core.windows.net/kda2c3cartraffic/log_00001.csv.gz')
+.ingest into table CarsTraffic(@'https://kustodetectiveagency.blob.core.windows.net/kda2c3cartraffic/log_00002.csv.gz')
+```
+
+We can directly see that we have a table with all of the stolen cars VIN number - StolenCars. 
+
+```kusto
+StolenCars
+```
+
+The other table CarsTraffic contains Timestamp, VIN, Ave, and Street. Do you remember the bank robbery case from season 1? 
+
+```kusto
+CarsTraffic
+| take 100
+```

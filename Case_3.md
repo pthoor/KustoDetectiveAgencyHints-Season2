@@ -19,7 +19,7 @@
 > Best regards,
 > Captain Samuel Impson.
 
-()[/img/KDA/Road.png]
+![](/img/KDA/Road.png)
 
 Let's jump into the data and find the cars.
 

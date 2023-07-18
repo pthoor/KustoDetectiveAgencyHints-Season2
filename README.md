@@ -1,5 +1,7 @@
 # Kusto Detective Agency Hints - Season 2
 
+![](/img/KDA/DataCanDeceive.png)
+
 This repo contains some additional hints to the existing ones in the game of Kusto Detective Agency 🕵️ 🔐 (Under construction!)
 
 <img src="https://detective.kusto.io/img/KDA-horizontal.svg">
@@ -11,14 +13,16 @@ In this season of Kusto Detective Agency (KDA) there will be 10 new challenges.
 * [Onboarding Case](_Onboarding.md)
 * [Case 1](Case_1.md)
 * [Case 2](Case_2.md)
-* [Case 3](Case_3.md)
-* [Case 4](Case_4.md)
-* [Case 5](Case_5.md)
+* [Case 3, Under progress](Case_3.md)
+* [Case 4, Under progress](Case_4.md)
+* [Case 5, Under progress]()
 * [Case 6 (Coming Soon]()
 * [Case 7 (Coming Soon)]()
 * [Case 8 (Coming Soon)]()
 * [Case 9 (Coming Soon)]()
 * [Case 10 (Coming Soon)]()
+
+![](/img/KDA/Clues.png)
 
 ## Information
 

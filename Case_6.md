@@ -265,4 +265,133 @@ you've picked the Image that revealed
 the pass-code to the World concealed.
 ```
 
-(To be continued... Not finished yet)
+Oh these riddeles... Let's see if we can solve them.
+
+* Three words that we need to find
+* The words need to form a timeline
+* The words need to have at least three letters
+* All punctuations mark the end
+* The words are case insensitive
+* The first word is below The King
+* The second word shares the count with the word Third
+* The last word is the first two letters from the word most sought into marked dozen, and change just one
+
+Time for some more extract_all with some RegEx, don't you think?
+
+So looking for the Title column we need to find three words that build a timeline. And hopefully when we have the correct book we want to look at the ImageURL column if we are on the right track. 
+
+To look for a three character word we can use the RegEx **@'(\w{3,})'**.
+
+* \w matches any word character (equal to [a-zA-Z0-9_])
+    * {3,} Quantifier — Matches between 3 and unlimited times, as many times as possible, giving back as needed (greedy)
+
+
+```kusto
+NationalGalleryArt
+| extend FirstWord=extract_all(@"(\w{3,})", Title)
+```
+
+Too much data... Let's see if we can optimize the query. 
+
+```kusto
+NationalGalleryArt
+| extend FirstWord=extract_all(@"(\w{3,})", Title)
+| mv-expand FirstWord to typeof(string)
+| summarize FirstWordCount = count() by FirstWord
+| sort by FirstWordCount desc
+```
+
+![](/img/Case6/Art_FirstWord.png)
+
+Almost! Now we see that we need to merge lower case and upper case words. We can use the **tolower()** function to convert the FirstWord column to lower case. We then summarize the FirstWordCount column by FirstWord. We then sort the FirstWordCount column descending (are you like me that never reminds which way ascending and descending is? I always need to look it up...). 
+
+```kusto
+NationalGalleryArt
+| extend FirstWord=extract_all(@"(\w{3,})", Title)
+| mv-expand FirstWord to typeof(string)
+| project FirstWord=tolower(FirstWord)
+| summarize FirstWordCount = count() by FirstWord
+| sort by FirstWordCount desc
+```
+
+![](/img/Case6/Art_FirstWord_tolower.png)
+
+Yes! Good job! Now let's make it more interesting by adding serialize and next() to the query.
+
+```kusto
+NationalGalleryArt
+| extend FirstWord=extract_all(@"(\w{3,})", Title)
+| mv-expand FirstWord to typeof(string)
+| project FirstWord=tolower(FirstWord)
+| summarize FirstWordCount = count() by FirstWord
+| sort by FirstWordCount desc
+| serialize WordAfterKing=next(FirstWord,1)
+| where FirstWord == "king"
+```
+
+Now you see that we are getting a quite nice result. If we just take our **where** operator I think we can get the first word. 
+
+![](/img/Case6/Art_FirstWordAfter.png)
+
+```kusto
+NationalGalleryArt
+| extend FirstWord=extract_all(@"(\w{3,})", Title)
+| mv-expand FirstWord to typeof(string)
+| project FirstWord=tolower(FirstWord)
+| summarize FirstWordCount = count() by FirstWord
+| sort by FirstWordCount desc
+| serialize WordAfter=next(FirstWord,1)
+| where FirstWord == "king"
+```
+
+![](/img/Case6/Art_FirstWordAfterKing.png)
+
+Second word. Have the same count as the word Third. Renaming the columns to make it more easy to read and follow that we are on the second word finding. 
+
+Back to **make_list** for all of the SecondWord column. We then summarize the **rowsWithSameCount** column by SecondWordCount. We then use the **has_any** function to check if the rowsWithSameCount column has the word "third". We then use **mv-expand** to expand the rowsWithSameCount column. 
+
+```kusto
+NationalGalleryArt
+| extend SecondWord=extract_all(@"(\w{3,})", Title)
+| mv-expand SecondWord to typeof(string)
+| project SecondWord=tolower(SecondWord)
+| summarize SecondWordCount = count() by SecondWord
+| sort by SecondWordCount desc
+| summarize rowsWithSameCount = make_list(SecondWord) by SecondWordCount
+| where rowsWithSameCount has_any ("third")
+| mv-expand rowsWithSameCount
+```
+
+![](/img/Case6/Art_SecondWord.png)
+
+Third word. *The first two letters from the word most sought.* Okey. *Into marked dozen, and change just one.* The twelfth word after that? Hmm... Looking at different [Window Functions](https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/rownumberfunction?WT.mc_id=AZ-MVP-5004683) I think we can use **row_number**. We then use **where** to get the first and twelfth word. 
+
+```kusto
+NationalGalleryArt
+| extend ThirdWord=extract_all(@"(\w{3,})", Title)
+| mv-expand ThirdWord to typeof(string)
+| project ThirdWord=tolower(ThirdWord)
+| summarize ThirdWordCount = count() by ThirdWord
+| sort by ThirdWordCount desc
+| extend RowNumber = row_number(1)
+| where RowNumber in (1,12)
+```
+
+![](/img/Case6/Art_ThirdWord.png)
+
+Day, Year, Month? I do think so, because MANTH or THMAN is not quite correct. MONTH is the correct word.
+
+Now we need to find some Titles with all of those words, because they do build a timeline...
+
+```kusto
+NationalGalleryArt
+| where Title has_all("year","month","day")
+```
+
+<img src="https://api.nga.gov/iiif/64c9eb07-5e01-40fe-8fd0-886cfb4a70c7__640/full/!900,900/0/default.jpg" width=35% height=35%>
+
+Grabbing the ImageURL to the clipboard and pasting it in the kuanda.org site we do get the passcode - cool stuff!
+
+![](/img/Case6/Art_Passcode.png)
+
+Case closed!

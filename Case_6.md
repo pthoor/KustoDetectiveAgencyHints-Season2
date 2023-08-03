@@ -17,6 +17,8 @@
 
 ![](/img/KDA/Mayor_smile.png)
 
+**Instructions for the new recruiters**
+
 ```text
 12204/497 62295/24 50883/678 47108/107 193867/3,
 45534/141 hidden 100922/183 143461/1 1181/505 46187/380.
@@ -92,7 +94,7 @@ Sounds like we have found the words!
 
 We need to train to get this right because we have a loooong text to decode. Time to get to know **mv-expand** (Multi-value expand) and **with_itemindex**. Docs for [mv-expand operator](https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/mvexpandoperator) and [with_itemindex](https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/mvexpandoperator#using-with_itemindex). As of today maybe not so clear to use so I will try to explain it here.
 
-In below query we gather our ObjectId's with the [**in()**](https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/in-cs-operator) operator and then we project the **ObjectId**, **Word** comes from *extract_all* where we will get all words in the ProvenanceText column and **ProvenanceText** columns (just to make sure we are getting it right). Then we use mv-expand to expand the Word column and we use with_itemindex to get the index of the Word column. We then project the key, Word and ProvenanceText columns. The key column is a combination of ObjectId and Index when we use **strcat()** (basically a string concatenation). 
+In below query we gather our ObjectId's with the [**in()**](https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/in-cs-operator) operator and then we project the **ObjectId**, **Word** comes from *extract_all* where we will get all words in the ProvenanceText column and **ProvenanceText** columns (just to make sure we are getting it right). Then we use mv-expand to expand the Word column and we use with_itemindex to get the index of the WordToFind column. We then project the CodeToCrack, WordToFind and ProvenanceText columns. The CodeToCrack column is a combination of ObjectId and Index when we use **strcat()** (basically a string concatenation). 
 
 The RegExp **@'(\w+)'** will get all words in the ProvenanceText column. 
 
@@ -102,16 +104,16 @@ The RegExp **@'(\w+)'** will get all words in the ProvenanceText column.
 ```kusto
 NationalGalleryArt
 | where ObjectId in (41701,131736)
-| project ObjectId, Word = extract_all(@'(\w+)', ProvenanceText), ProvenanceText
-| mv-expand with_itemindex=Index Word
-| project key=strcat(ObjectId,'/',Index), Word, ProvenanceText
+| project ObjectId, WordToFind = extract_all(@'(\w+)', ProvenanceText), ProvenanceText
+| mv-expand with_itemindex=Index WordToFind
+| project CodeToCrack=strcat(ObjectId,'/',Index), WordToFind, ProvenanceText
 ```
 
 ![](/img/Case6/Art_ObjId41701_131736_mvexpand.png)
 
 Let's make it more interesting. We'll take the first hint and add it as an table with **.set-or-append**. We then join the two tables with **join** and **on**. We then project the **CodeHint** and **ProvenanceText** columns. 
 
-´´´kusto
+```kusto
 .set-or-append Case6Hint1 <|
 print CodeHint = '41701/11 131736/0'
 ```
@@ -133,12 +135,12 @@ Case6Hint1
 What about the extract_all operator? You see now we want to extract the digits and the slash. The RegExp **@'(\d+/\d+)'** will get all digits and the slash in the CodeHint column.
 
 * \d+ means that we matches a digit (equal to [0-9])
-    * + matches the previous token between one and unlimited times, as many times as possible, giving back as needed (greedy)
+    * (+) matches the previous token between one and unlimited times, as many times as possible, giving back as needed (greedy)
 * / matches the character / literally (case sensitive)
 * \d+ means that we matches a digit (equal to [0-9])
-    * + matches the previous token between one and unlimited times, as many times as possible, giving back as needed (greedy)
+    * (+) matches the previous token between one and unlimited times, as many times as possible, giving back as needed (greedy)
 
-We continue with the **mv-expand** operator and now with the **to** operator. The **to** operator will convert the CodeToCrack column to a string. Then going for the **join** operator so we can more easily join the two tables (you see why we wanted to add the hint as a table?). The **leftouter** kind of the join operator will return all rows from the left table, and the matched rows from the right table. The **on** operator will join the two tables on the CodeToCrack column. 
+We continue with the **mv-expand** operator and now with the **to** operator. The **to** operator will convert the CodeToCrack column to a string. Then going for the **join** operator so we can more easily join the two tables (you see why we wanted to add the hint as a table?). The **leftouter** kind of the [join operator](https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/joinoperator?pivots=azuredataexplorer&WT.mc_id=AZ-MVP-5004683) will return all rows from the left table, and the matched rows from the right table. The **on** operator will join the two tables on the CodeToCrack column. 
 
 ![](/img/Case6/Art_Hint1_Solved.png)
 
